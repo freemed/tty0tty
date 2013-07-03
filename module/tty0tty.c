@@ -84,14 +84,14 @@ static struct tty0tty_serial *tty0tty_table[TINY_TTY_MINORS];	/* initially all N
 static int tty0tty_open(struct tty_struct *tty, struct file *file)
 {
 	struct tty0tty_serial *tty0tty;
-        int index;
+	int index;
 	int msr=0;	
 	int mcr=0;
 
 #ifdef SCULL_DEBUG
 	printk(KERN_DEBUG "%s - \n", __FUNCTION__);
 #endif	
-        /* initialize the pointer in case something fails */
+	/* initialize the pointer in case something fails */
 	tty->driver_data = NULL;
 
 	/* get the serial object associated with this tty pointer */
@@ -111,34 +111,34 @@ static int tty0tty_open(struct tty_struct *tty, struct file *file)
 		tty0tty->open_count = 0;
 
 		tty0tty_table[index] = tty0tty;
-        
-              }
 
-         if( (index % 2) == 0)
-         { 
-                if(tty0tty_table[index+1] != NULL) 
-	          if (tty0tty_table[index+1]->open_count > 0)
-                    mcr=tty0tty_table[index+1]->mcr;
-         }
-         else
-         {
-                if(tty0tty_table[index-1] != NULL) 
-	          if (tty0tty_table[index-1]->open_count > 0)
-                    mcr=tty0tty_table[index-1]->mcr;
-         } 
-	
+	}
+
+	if( (index % 2) == 0)
+	{
+		if(tty0tty_table[index+1] != NULL)
+			if (tty0tty_table[index+1]->open_count > 0)
+				mcr=tty0tty_table[index+1]->mcr;
+	}
+	else
+	{
+		if(tty0tty_table[index-1] != NULL)
+			if (tty0tty_table[index-1]->open_count > 0)
+				mcr=tty0tty_table[index-1]->mcr;
+	}
+
 //null modem connection
 
-         if( (mcr & MCR_RTS) == MCR_RTS )
-         {
-	        msr |= MSR_CTS;
-         }
+	if( (mcr & MCR_RTS) == MCR_RTS )
+	{
+		msr |= MSR_CTS;
+	}
  
-         if( (mcr & MCR_DTR) == MCR_DTR )
-         {
-	        msr |= MSR_DSR;
-	        msr |= MSR_CD;
-         }
+	if( (mcr & MCR_DTR) == MCR_DTR )
+	{
+		msr |= MSR_DSR;
+		msr |= MSR_CD;
+	}
 	
 	tty0tty->msr = msr;
  
@@ -168,8 +168,8 @@ static void do_close(struct tty0tty_serial *tty0tty)
 	--tty0tty->open_count;
 exit:
 	up(&tty0tty->sem);
-    
-   return;
+
+	return;
 }
 
 static void tty0tty_close(struct tty_struct *tty, struct file *file)
@@ -177,7 +177,7 @@ static void tty0tty_close(struct tty_struct *tty, struct file *file)
 	struct tty0tty_serial *tty0tty = tty->driver_data;
 	
 #ifdef SCULL_DEBUG
-        printk(KERN_DEBUG "%s - \n", __FUNCTION__);
+	printk(KERN_DEBUG "%s - \n", __FUNCTION__);
 #endif
 	if (tty0tty)
 		do_close(tty0tty);
@@ -189,7 +189,7 @@ static int tty0tty_write(struct tty_struct *tty, const unsigned char *buffer, in
 	int retval = -EINVAL;
 	struct tty_struct  *ttyx = NULL;	
 
-        if (!tty0tty)
+	if (!tty0tty)
 		return -ENODEV;
 
 	down(&tty0tty->sem);
@@ -198,27 +198,27 @@ static int tty0tty_write(struct tty_struct *tty, const unsigned char *buffer, in
 		/* port was not opened */
 		goto exit;
 
-        if( (tty0tty->tty->index % 2) == 0)
-        { 
-         if(tty0tty_table[tty0tty->tty->index+1] != NULL) 
-	   if (tty0tty_table[tty0tty->tty->index+1]->open_count > 0)
-             ttyx=tty0tty_table[tty0tty->tty->index+1]->tty;
-        }
-        else
-        {
-         if(tty0tty_table[tty0tty->tty->index-1] != NULL) 
-	   if (tty0tty_table[tty0tty->tty->index-1]->open_count > 0)
-             ttyx=tty0tty_table[tty0tty->tty->index-1]->tty;
-        } 
+	if( (tty0tty->tty->index % 2) == 0)
+	{
+		if(tty0tty_table[tty0tty->tty->index+1] != NULL)
+			if (tty0tty_table[tty0tty->tty->index+1]->open_count > 0)
+				ttyx=tty0tty_table[tty0tty->tty->index+1]->tty;
+	}
+	else
+	{
+		if(tty0tty_table[tty0tty->tty->index-1] != NULL)
+			if (tty0tty_table[tty0tty->tty->index-1]->open_count > 0)
+				ttyx=tty0tty_table[tty0tty->tty->index-1]->tty;
+	}
 
-//        tty->low_latency=1;
+//	tty->low_latency=1;
 
-        if(ttyx != NULL)
-        {
-          tty_insert_flip_string(ttyx, buffer, count);
-          tty_flip_buffer_push(ttyx);
-	  retval=count;
-        } 
+	if(ttyx != NULL)
+	{
+		tty_insert_flip_string(ttyx, buffer, count);
+		tty_flip_buffer_push(ttyx);
+		retval=count;
+	}
 		
 exit:
 	up(&tty0tty->sem);
@@ -255,7 +255,7 @@ static void tty0tty_set_termios(struct tty_struct *tty, struct ktermios *old_ter
 	unsigned int cflag;
 	
 #ifdef SCULL_DEBUG
-        printk(KERN_DEBUG "%s - \n", __FUNCTION__);
+	printk(KERN_DEBUG "%s - \n", __FUNCTION__);
 #endif
 	cflag = tty->termios->c_cflag;
 
@@ -347,96 +347,96 @@ static int tty0tty_tiocmget(struct tty_struct *tty, struct file *file)
 	unsigned int mcr = tty0tty->mcr;
 	
 
-	result = ((mcr & MCR_DTR)  ? TIOCM_DTR  : 0) |	/* DTR is set */
-             ((mcr & MCR_RTS)  ? TIOCM_RTS  : 0) |	/* RTS is set */
-             ((mcr & MCR_LOOP) ? TIOCM_LOOP : 0) |	/* LOOP is set */
-             ((msr & MSR_CTS)  ? TIOCM_CTS  : 0) |	/* CTS is set */
-             ((msr & MSR_CD)   ? TIOCM_CAR  : 0) |	/* Carrier detect is set*/
-             ((msr & MSR_RI)   ? TIOCM_RI   : 0) |	/* Ring Indicator is set */
-             ((msr & MSR_DSR)  ? TIOCM_DSR  : 0);	/* DSR is set */
+	result = 	((mcr & MCR_DTR)  ? TIOCM_DTR  : 0) |	/* DTR is set */
+			((mcr & MCR_RTS)  ? TIOCM_RTS  : 0) |	/* RTS is set */
+			((mcr & MCR_LOOP) ? TIOCM_LOOP : 0) |	/* LOOP is set */
+			((msr & MSR_CTS)  ? TIOCM_CTS  : 0) |	/* CTS is set */
+			((msr & MSR_CD)   ? TIOCM_CAR  : 0) |	/* Carrier detect is set*/
+			((msr & MSR_RI)   ? TIOCM_RI   : 0) |	/* Ring Indicator is set */
+			((msr & MSR_DSR)  ? TIOCM_DSR  : 0);	/* DSR is set */
 
 	return result;
 }
 
 static int tty0tty_tiocmset(struct tty_struct *tty, struct file *file,
-                         unsigned int set, unsigned int clear)
+				unsigned int set, unsigned int clear)
 {
 	struct tty0tty_serial *tty0tty = tty->driver_data;
 	unsigned int mcr = tty0tty->mcr;
 	unsigned int msr=0;
-        
+
 #ifdef SCULL_DEBUG
-        printk(KERN_DEBUG "%s - \n", __FUNCTION__);
+	printk(KERN_DEBUG "%s - \n", __FUNCTION__);
 #endif
 
-        if( (tty0tty->tty->index % 2) == 0)
-        { 
-           if(tty0tty_table[tty0tty->tty->index+1] != NULL) 
-	     if (tty0tty_table[tty0tty->tty->index+1]->open_count > 0)
-               msr=tty0tty_table[tty0tty->tty->index+1]->msr;
-        }
-        else
-        {
-           if(tty0tty_table[tty0tty->tty->index-1] != NULL) 
-	     if (tty0tty_table[tty0tty->tty->index-1]->open_count > 0)
-               msr=tty0tty_table[tty0tty->tty->index-1]->msr;
-        } 
+	if( (tty0tty->tty->index % 2) == 0)
+	{
+		if(tty0tty_table[tty0tty->tty->index+1] != NULL)
+			if (tty0tty_table[tty0tty->tty->index+1]->open_count > 0)
+				msr=tty0tty_table[tty0tty->tty->index+1]->msr;
+	}
+	else
+	{
+		if(tty0tty_table[tty0tty->tty->index-1] != NULL)
+			if (tty0tty_table[tty0tty->tty->index-1]->open_count > 0)
+				msr=tty0tty_table[tty0tty->tty->index-1]->msr;
+	}
 	
 //null modem connection
 
 	if (set & TIOCM_RTS)
-        {  
-	   mcr |= MCR_RTS;
-	   msr |= MSR_CTS;
-        }
+	{
+		mcr |= MCR_RTS;
+		msr |= MSR_CTS;
+	}
  
 	if (set & TIOCM_DTR)
-        {
-	   mcr |= MCR_DTR;
-	   msr |= MSR_DSR;
-	   msr |= MSR_CD;
-        }
+	{
+		mcr |= MCR_DTR;
+		msr |= MSR_DSR;
+		msr |= MSR_CD;
+	}
 
 	if (clear & TIOCM_RTS)
-        {
-	   mcr &= ~MCR_RTS;
-	   msr &= ~MSR_CTS;
-        }
+	{
+		mcr &= ~MCR_RTS;
+		msr &= ~MSR_CTS;
+	}
  
 	if (clear & TIOCM_DTR)
-        {
-  	   mcr &= ~MCR_DTR;
-	   msr &= ~MSR_DSR;
-	   msr &= ~MSR_CD;
-        }
-        
+	{
+		mcr &= ~MCR_DTR;
+		msr &= ~MSR_DSR;
+		msr &= ~MSR_CD;
+	}
+
 
 	/* set the new MCR value in the device */
 	tty0tty->mcr = mcr;
-        
-        if( (tty0tty->tty->index % 2) == 0)
-        {  
-           if(tty0tty_table[tty0tty->tty->index+1] != NULL) 
-	     if (tty0tty_table[tty0tty->tty->index+1]->open_count > 0)
-               tty0tty_table[tty0tty->tty->index+1]->msr=msr;
-        }
-        else
-        {
-           if(tty0tty_table[tty0tty->tty->index-1] != NULL) 
-	     if (tty0tty_table[tty0tty->tty->index-1]->open_count > 0)
-               tty0tty_table[tty0tty->tty->index-1]->msr=msr;
-        } 
+
+	if( (tty0tty->tty->index % 2) == 0)
+	{
+		if(tty0tty_table[tty0tty->tty->index+1] != NULL)
+			if (tty0tty_table[tty0tty->tty->index+1]->open_count > 0)
+				tty0tty_table[tty0tty->tty->index+1]->msr=msr;
+	}
+	else
+	{
+		if(tty0tty_table[tty0tty->tty->index-1] != NULL)
+			if (tty0tty_table[tty0tty->tty->index-1]->open_count > 0)
+				tty0tty_table[tty0tty->tty->index-1]->msr=msr;
+	}
 	return 0;
 }
 
 
 static int tty0tty_ioctl_tiocgserial(struct tty_struct *tty, struct file *file,
-                      unsigned int cmd, unsigned long arg)
+					unsigned int cmd, unsigned long arg)
 {
 	struct tty0tty_serial *tty0tty = tty->driver_data;
 	
 #ifdef SCULL_DEBUG
-        printk(KERN_DEBUG "%s - \n", __FUNCTION__);
+	printk(KERN_DEBUG "%s - \n", __FUNCTION__);
 #endif
 	if (cmd == TIOCGSERIAL) {
 		struct serial_struct tmp;
@@ -467,12 +467,12 @@ static int tty0tty_ioctl_tiocgserial(struct tty_struct *tty, struct file *file,
 }
 
 static int tty0tty_ioctl_tiocmiwait(struct tty_struct *tty, struct file *file,
-                      unsigned int cmd, unsigned long arg)
+					unsigned int cmd, unsigned long arg)
 {
 	struct tty0tty_serial *tty0tty = tty->driver_data;
 	
 #ifdef SCULL_DEBUG
-        printk(KERN_DEBUG "%s - \n", __FUNCTION__);
+	printk(KERN_DEBUG "%s - \n", __FUNCTION__);
 #endif
 	if (cmd == TIOCMIWAIT) {
 		DECLARE_WAITQUEUE(wait, current);
@@ -508,12 +508,12 @@ static int tty0tty_ioctl_tiocmiwait(struct tty_struct *tty, struct file *file,
 }
 
 static int tty0tty_ioctl_tiocgicount(struct tty_struct *tty, struct file *file,
-                      unsigned int cmd, unsigned long arg)
+					unsigned int cmd, unsigned long arg)
 {
 	struct tty0tty_serial *tty0tty = tty->driver_data;
 	
 #ifdef SCULL_DEBUG
-        printk(KERN_DEBUG "%s - \n", __FUNCTION__);
+	printk(KERN_DEBUG "%s - \n", __FUNCTION__);
 #endif
 	if (cmd == TIOCGICOUNT) {
 		struct async_icount cnow = tty0tty->icount;
@@ -539,7 +539,7 @@ static int tty0tty_ioctl_tiocgicount(struct tty_struct *tty, struct file *file,
 }
 
 static int tty0tty_ioctl(struct tty_struct *tty, struct file *file,
-                      unsigned int cmd, unsigned long arg)
+				unsigned int cmd, unsigned long arg)
 {
 #ifdef SCULL_DEBUG
 	printk(KERN_DEBUG "%s - %04X \n", __FUNCTION__,cmd);
@@ -585,19 +585,19 @@ static int __init tty0tty_init(void)
 	tty0tty_tty_driver->owner = THIS_MODULE;
 	tty0tty_tty_driver->driver_name = "tty0tty";
 	tty0tty_tty_driver->name = "tnt";
-        /* no more devfs subsystem */
+	/* no more devfs subsystem */
 	tty0tty_tty_driver->major = TINY_TTY_MAJOR;
 	tty0tty_tty_driver->type = TTY_DRIVER_TYPE_SERIAL;
 	tty0tty_tty_driver->subtype = SERIAL_TYPE_NORMAL;
-        tty0tty_tty_driver->flags = TTY_DRIVER_RESET_TERMIOS | TTY_DRIVER_REAL_RAW ;
-        /* no more devfs subsystem */
+	tty0tty_tty_driver->flags = TTY_DRIVER_RESET_TERMIOS | TTY_DRIVER_REAL_RAW ;
+	/* no more devfs subsystem */
 	tty0tty_tty_driver->init_termios = tty_std_termios;
-        tty0tty_tty_driver->init_termios.c_iflag = 0;
-        tty0tty_tty_driver->init_termios.c_oflag = 0;
-        tty0tty_tty_driver->init_termios.c_cflag = B38400 | CS8 | CREAD;
-        tty0tty_tty_driver->init_termios.c_lflag = 0;
-        tty0tty_tty_driver->init_termios.c_ispeed = 38400;
-        tty0tty_tty_driver->init_termios.c_ospeed = 38400;
+	tty0tty_tty_driver->init_termios.c_iflag = 0;
+	tty0tty_tty_driver->init_termios.c_oflag = 0;
+	tty0tty_tty_driver->init_termios.c_cflag = B38400 | CS8 | CREAD;
+	tty0tty_tty_driver->init_termios.c_lflag = 0;
+	tty0tty_tty_driver->init_termios.c_ispeed = 38400;
+	tty0tty_tty_driver->init_termios.c_ospeed = 38400;
 
 
 	tty_set_operations(tty0tty_tty_driver, &serial_ops);
@@ -621,7 +621,7 @@ static void __exit tty0tty_exit(void)
 	int i;
 	
 #ifdef SCULL_DEBUG
-        printk(KERN_DEBUG "%s - \n", __FUNCTION__);
+	printk(KERN_DEBUG "%s - \n", __FUNCTION__);
 #endif
 	for (i = 0; i < TINY_TTY_MINORS; ++i)
 		tty_unregister_device(tty0tty_tty_driver, i);
