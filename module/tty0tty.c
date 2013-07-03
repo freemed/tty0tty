@@ -39,7 +39,7 @@
 #include <linux/uaccess.h>
 
 
-#define DRIVER_VERSION "v1.0"
+#define DRIVER_VERSION "v1.2"
 #define DRIVER_AUTHOR "Luis Claudio Gamboa Lopes <lcgamboa@yahoo.com>"
 #define DRIVER_DESC "tty0tty null modem driver"
 
@@ -582,12 +582,12 @@ static int __init tty0tty_init(void)
 	/* register the tty driver */
 	retval = tty_register_driver(tty0tty_tty_driver);
 	if (retval) {
-		printk(KERN_ERR "failed to register tty0tty tty driver");
+		printk(KERN_ERR "failed to register tty0tty tty driver\n");
 		put_tty_driver(tty0tty_tty_driver);
 		return retval;
 	}
 
-	printk(KERN_INFO DRIVER_DESC " " DRIVER_VERSION);
+	printk(KERN_INFO DRIVER_DESC " " DRIVER_VERSION "\n");
 	return retval;
 }
 
