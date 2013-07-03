@@ -52,6 +52,12 @@ MODULE_LICENSE("GPL");
 #define TINY_TTY_MAJOR		240	/* experimental range */
 #define TINY_TTY_MINORS		8	/* device number, always even*/
 
+/* Serial ports are paired by adjacent index numbers -- 0 and 1, 2 and 3, 4 and 5.
+ * I.e. same upper bits of index number; only different least-significant-bit.
+ * XOR least-significant-bit to find index of paired serial port.
+ */
+#define PAIRED_INDEX(INDEX)	((INDEX) ^ 1)
+
 /* fake UART values */
 //out
 #define MCR_DTR		0x01
@@ -85,6 +91,7 @@ static int tty0tty_open(struct tty_struct *tty, struct file *file)
 {
 	struct tty0tty_serial *tty0tty;
 	int index;
+	int paired_index;
 	int msr=0;	
 	int mcr=0;
 
@@ -96,6 +103,7 @@ static int tty0tty_open(struct tty_struct *tty, struct file *file)
 
 	/* get the serial object associated with this tty pointer */
 	index = tty->index;
+	paired_index = PAIRED_INDEX(index);
 	tty0tty = tty0tty_table[index];
 	if (tty0tty == NULL) {
 		/* first time accessing this device, let's create it */
@@ -114,18 +122,9 @@ static int tty0tty_open(struct tty_struct *tty, struct file *file)
 
 	}
 
-	if( (index % 2) == 0)
-	{
-		if(tty0tty_table[index+1] != NULL)
-			if (tty0tty_table[index+1]->open_count > 0)
-				mcr=tty0tty_table[index+1]->mcr;
-	}
-	else
-	{
-		if(tty0tty_table[index-1] != NULL)
-			if (tty0tty_table[index-1]->open_count > 0)
-				mcr=tty0tty_table[index-1]->mcr;
-	}
+	if (tty0tty_table[paired_index] != NULL &&
+	    tty0tty_table[paired_index]->open_count > 0)
+		mcr = tty0tty_table[paired_index]->mcr;
 
 //null modem connection
 
@@ -188,6 +187,7 @@ static int tty0tty_write(struct tty_struct *tty, const unsigned char *buffer, in
 	struct tty0tty_serial *tty0tty = tty->driver_data;
 	int retval = -EINVAL;
 	struct tty_struct  *ttyx = NULL;	
+	int paired_index;
 
 	if (!tty0tty)
 		return -ENODEV;
@@ -198,18 +198,10 @@ static int tty0tty_write(struct tty_struct *tty, const unsigned char *buffer, in
 		/* port was not opened */
 		goto exit;
 
-	if( (tty0tty->tty->index % 2) == 0)
-	{
-		if(tty0tty_table[tty0tty->tty->index+1] != NULL)
-			if (tty0tty_table[tty0tty->tty->index+1]->open_count > 0)
-				ttyx=tty0tty_table[tty0tty->tty->index+1]->tty;
-	}
-	else
-	{
-		if(tty0tty_table[tty0tty->tty->index-1] != NULL)
-			if (tty0tty_table[tty0tty->tty->index-1]->open_count > 0)
-				ttyx=tty0tty_table[tty0tty->tty->index-1]->tty;
-	}
+	paired_index = PAIRED_INDEX(tty0tty->tty->index);
+	if (tty0tty_table[paired_index] != NULL &&
+	    tty0tty_table[paired_index]->open_count > 0)
+		ttyx = tty0tty_table[paired_index]->tty;
 
 //	tty->low_latency=1;
 
@@ -364,23 +356,16 @@ static int tty0tty_tiocmset(struct tty_struct *tty, struct file *file,
 	struct tty0tty_serial *tty0tty = tty->driver_data;
 	unsigned int mcr = tty0tty->mcr;
 	unsigned int msr=0;
+	int paired_index;
 
 #ifdef SCULL_DEBUG
 	printk(KERN_DEBUG "%s - \n", __FUNCTION__);
 #endif
 
-	if( (tty0tty->tty->index % 2) == 0)
-	{
-		if(tty0tty_table[tty0tty->tty->index+1] != NULL)
-			if (tty0tty_table[tty0tty->tty->index+1]->open_count > 0)
-				msr=tty0tty_table[tty0tty->tty->index+1]->msr;
-	}
-	else
-	{
-		if(tty0tty_table[tty0tty->tty->index-1] != NULL)
-			if (tty0tty_table[tty0tty->tty->index-1]->open_count > 0)
-				msr=tty0tty_table[tty0tty->tty->index-1]->msr;
-	}
+	paired_index = PAIRED_INDEX(tty0tty->tty->index);
+	if (tty0tty_table[paired_index] != NULL &&
+	    tty0tty_table[paired_index]->open_count > 0)
+		msr = tty0tty_table[paired_index]->msr;
 	
 //null modem connection
 
@@ -414,18 +399,9 @@ static int tty0tty_tiocmset(struct tty_struct *tty, struct file *file,
 	/* set the new MCR value in the device */
 	tty0tty->mcr = mcr;
 
-	if( (tty0tty->tty->index % 2) == 0)
-	{
-		if(tty0tty_table[tty0tty->tty->index+1] != NULL)
-			if (tty0tty_table[tty0tty->tty->index+1]->open_count > 0)
-				tty0tty_table[tty0tty->tty->index+1]->msr=msr;
-	}
-	else
-	{
-		if(tty0tty_table[tty0tty->tty->index-1] != NULL)
-			if (tty0tty_table[tty0tty->tty->index-1]->open_count > 0)
-				tty0tty_table[tty0tty->tty->index-1]->msr=msr;
-	}
+	if (tty0tty_table[paired_index] != NULL &&
+	    tty0tty_table[paired_index]->open_count > 0)
+		tty0tty_table[paired_index]->msr = msr;
 	return 0;
 }
 
