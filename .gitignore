@@ -1,0 +1,24 @@
+# Ignore objects and archives, anywhere in the tree.
+*.[oa]
+*.lo
+*.la
+*.ko
+
+# Other build output
+*.mod.c
+*.o.cmd
+*.ko.cmd
+/module/Module.symvers
+/module/modules.order
+/module/.tmp_versions
+
+# Ignore backup files
+*~
+
+# Ignore Eclipse project files
+.cproject
+.project
+.autotools
+.settings
+.pydevproject
+
