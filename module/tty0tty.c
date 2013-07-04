@@ -63,6 +63,8 @@ MODULE_LICENSE("GPL");
 #define MCR_DTR		0x01
 #define MCR_RTS		0x02
 #define MCR_LOOP	0x04
+#define MCR_OUT1	0x08
+#define MCR_OUT2	0x10
 //in
 #define MSR_CTS		0x10
 #define MSR_CD		0x20
@@ -87,13 +89,36 @@ struct tty0tty_serial {
 static struct tty0tty_serial *tty0tty_table[TINY_TTY_MINORS];	/* initially all NULL */
 
 
+static inline void null_modem_signal_copy(struct tty0tty_serial * tty_to, const struct tty0tty_serial * tty_from)
+{
+	unsigned int msr_to = 0;
+	unsigned int mcr_from = 0;
+
+	if (tty_to != NULL && tty_to->open_count > 0) {
+		if (tty_from != NULL && tty_from->open_count > 0) {
+			mcr_from = tty_from->mcr;
+		}
+		msr_to = tty_to->msr & ~(MSR_CD | MSR_CTS | MSR_DSR | MSR_RI);
+
+		/* RTS --> CTS */
+		if (mcr_from & MCR_RTS) {
+			msr_to |= MSR_CTS;
+		}
+		/* DTR --> DSR and DCD */
+		if (mcr_from & MCR_DTR) {
+			msr_to |= MSR_DSR;
+			msr_to |= MSR_CD;
+		}
+
+		tty_to->msr = msr_to;
+	}
+}
+
 static int tty0tty_open(struct tty_struct *tty, struct file *file)
 {
 	struct tty0tty_serial *tty0tty;
 	int index;
 	int paired_index;
-	int msr=0;	
-	int mcr=0;
 
 #ifdef SCULL_DEBUG
 	printk(KERN_DEBUG "%s - \n", __FUNCTION__);
@@ -122,25 +147,6 @@ static int tty0tty_open(struct tty_struct *tty, struct file *file)
 
 	}
 
-	if (tty0tty_table[paired_index] != NULL &&
-	    tty0tty_table[paired_index]->open_count > 0)
-		mcr = tty0tty_table[paired_index]->mcr;
-
-//null modem connection
-
-	if( (mcr & MCR_RTS) == MCR_RTS )
-	{
-		msr |= MSR_CTS;
-	}
- 
-	if( (mcr & MCR_DTR) == MCR_DTR )
-	{
-		msr |= MSR_DSR;
-		msr |= MSR_CD;
-	}
-	
-	tty0tty->msr = msr;
- 
 	down(&tty0tty->sem);
 
 	/* save our structure within the tty structure */
@@ -148,6 +154,8 @@ static int tty0tty_open(struct tty_struct *tty, struct file *file)
 	tty0tty->tty = tty;
 
 	++tty0tty->open_count;
+
+	null_modem_signal_copy(tty0tty, tty0tty_table[paired_index]);
 
 	up(&tty0tty->sem);
 	return 0;
@@ -339,9 +347,11 @@ static int tty0tty_tiocmget(struct tty_struct *tty, struct file *file)
 	unsigned int mcr = tty0tty->mcr;
 	
 
-	result = 	((mcr & MCR_DTR)  ? TIOCM_DTR  : 0) |	/* DTR is set */
+	result =	((mcr & MCR_DTR)  ? TIOCM_DTR  : 0) |	/* DTR is set */
 			((mcr & MCR_RTS)  ? TIOCM_RTS  : 0) |	/* RTS is set */
 			((mcr & MCR_LOOP) ? TIOCM_LOOP : 0) |	/* LOOP is set */
+			((mcr & MCR_OUT1) ? TIOCM_OUT1 : 0) |	/* OUT1 is set */
+			((mcr & MCR_OUT2) ? TIOCM_OUT2 : 0) |	/* OUT2 is set */
 			((msr & MSR_CTS)  ? TIOCM_CTS  : 0) |	/* CTS is set */
 			((msr & MSR_CD)   ? TIOCM_CAR  : 0) |	/* Carrier detect is set*/
 			((msr & MSR_RI)   ? TIOCM_RI   : 0) |	/* Ring Indicator is set */
@@ -355,53 +365,47 @@ static int tty0tty_tiocmset(struct tty_struct *tty, struct file *file,
 {
 	struct tty0tty_serial *tty0tty = tty->driver_data;
 	unsigned int mcr = tty0tty->mcr;
-	unsigned int msr=0;
 	int paired_index;
 
 #ifdef SCULL_DEBUG
 	printk(KERN_DEBUG "%s - \n", __FUNCTION__);
 #endif
 
-	paired_index = PAIRED_INDEX(tty0tty->tty->index);
-	if (tty0tty_table[paired_index] != NULL &&
-	    tty0tty_table[paired_index]->open_count > 0)
-		msr = tty0tty_table[paired_index]->msr;
-	
-//null modem connection
-
-	if (set & TIOCM_RTS)
-	{
+	/* Set bits */
+	if (set & TIOCM_RTS) {
 		mcr |= MCR_RTS;
-		msr |= MSR_CTS;
 	}
- 
-	if (set & TIOCM_DTR)
-	{
+	if (set & TIOCM_DTR) {
 		mcr |= MCR_DTR;
-		msr |= MSR_DSR;
-		msr |= MSR_CD;
+	}
+	if (set & TIOCM_OUT1) {
+		mcr |= MCR_OUT1;
+	}
+	if (set & TIOCM_OUT2) {
+		mcr |= MCR_OUT2;
 	}
 
-	if (clear & TIOCM_RTS)
-	{
+	/* Clear bits */
+	if (clear & TIOCM_RTS) {
 		mcr &= ~MCR_RTS;
-		msr &= ~MSR_CTS;
 	}
- 
-	if (clear & TIOCM_DTR)
-	{
+	if (clear & TIOCM_DTR) {
 		mcr &= ~MCR_DTR;
-		msr &= ~MSR_DSR;
-		msr &= ~MSR_CD;
 	}
-
+	if (clear & TIOCM_OUT1) {
+		mcr &= ~MCR_OUT1;
+	}
+	if (clear & TIOCM_OUT2) {
+		mcr &= ~MCR_OUT2;
+	}
 
 	/* set the new MCR value in the device */
 	tty0tty->mcr = mcr;
 
-	if (tty0tty_table[paired_index] != NULL &&
-	    tty0tty_table[paired_index]->open_count > 0)
-		tty0tty_table[paired_index]->msr = msr;
+	//null modem connection
+	paired_index = PAIRED_INDEX(tty0tty->tty->index);
+	null_modem_signal_copy(tty0tty_table[paired_index], tty0tty);
+
 	return 0;
 }
 
