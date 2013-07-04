@@ -48,9 +48,10 @@ MODULE_AUTHOR( DRIVER_AUTHOR );
 MODULE_DESCRIPTION( DRIVER_DESC );
 MODULE_LICENSE("GPL");
 
+#define TINY_TTY_PAIRS		4
 
 #define TINY_TTY_MAJOR		240	/* experimental range */
-#define TINY_TTY_MINORS		8	/* device number, always even*/
+#define TINY_TTY_MINORS		(TINY_TTY_PAIRS * 2)
 
 /* Serial ports are paired by adjacent index numbers -- 0 and 1, 2 and 3, 4 and 5.
  * I.e. same upper bits of index number; only different least-significant-bit.
