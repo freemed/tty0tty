@@ -72,6 +72,8 @@ MODULE_LICENSE("GPL");
 #define MSR_DSR		0x40
 #define MSR_RI		0x80
 
+#define WRITE_ROOM_MAX	64
+
 struct tty0tty_serial {
 	struct tty_struct	*tty;		/* pointer to the tty for this device */
 	int			open_count;	/* number of times this port has been opened */
@@ -89,6 +91,8 @@ struct tty0tty_serial {
 
 static struct tty0tty_serial *tty0tty_table[TINY_TTY_MINORS];	/* initially all NULL */
 
+/* Function prototypes */
+static int tty0tty_write_room(struct tty_struct *tty);
 
 static inline void null_modem_signal_copy(struct tty0tty_serial * tty_to, const struct tty0tty_serial * tty_from)
 {
@@ -197,6 +201,12 @@ static int tty0tty_write(struct tty_struct *tty, const unsigned char *buffer, in
 	int retval = -EINVAL;
 	struct tty_struct  *ttyx = NULL;	
 	int paired_index;
+	int room = 0;
+
+	room = tty0tty_write_room(tty);
+	if (room < 0)
+		/* error case */
+		return room;
 
 	if (!tty0tty)
 		return -ENODEV;
@@ -214,12 +224,14 @@ static int tty0tty_write(struct tty_struct *tty, const unsigned char *buffer, in
 
 //	tty->low_latency=1;
 
+	if (count > room)
+		count = room;
 	if(ttyx != NULL)
 	{
 		tty_insert_flip_string(ttyx, buffer, count);
 		tty_flip_buffer_push(ttyx);
-		retval=count;
 	}
+	retval=count;
 		
 exit:
 	up(&tty0tty->sem);
@@ -229,20 +241,37 @@ exit:
 static int tty0tty_write_room(struct tty_struct *tty) 
 {
 	struct tty0tty_serial *tty0tty = tty->driver_data;
+	struct tty0tty_serial *tty0tty_paired = NULL;
+	int index;
+	int paired_index;
 	int room = -EINVAL;
 	
 	if (!tty0tty)
 		return -ENODEV;
 
 	down(&tty0tty->sem);
-	
+
 	if (!tty0tty->open_count) {
 		/* port was not opened */
 		goto exit;
 	}
 
+	/* get the serial object associated with this tty pointer */
+	index = tty->index;
+	paired_index = PAIRED_INDEX(index);
+	tty0tty_paired = tty0tty_table[paired_index];
+	if (tty0tty_paired == NULL || tty0tty_paired->open_count == 0) {
+		/* Paired port is not open */
+		/* Effectively dump all written bytes */
+		room = WRITE_ROOM_MAX;
+		goto exit;
+	}
+
 	/* calculate how much room is left in the device */
-	room = 255;
+	room = WRITE_ROOM_MAX - tty0tty_paired->tty->read_cnt;
+	if (room < 0) {
+		room = 0;
+	}
 
 exit:
 	up(&tty0tty->sem);
