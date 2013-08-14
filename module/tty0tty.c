@@ -368,7 +368,7 @@ static void tty0tty_set_termios(struct tty_struct *tty, struct ktermios *old_ter
 }
 
 
-static int tty0tty_tiocmget(struct tty_struct *tty, struct file *file)
+static int tty0tty_tiocmget(struct tty_struct *tty)
 {
 	struct tty0tty_serial *tty0tty = tty->driver_data;
 
@@ -390,7 +390,7 @@ static int tty0tty_tiocmget(struct tty_struct *tty, struct file *file)
 	return result;
 }
 
-static int tty0tty_tiocmset(struct tty_struct *tty, struct file *file,
+static int tty0tty_tiocmset(struct tty_struct *tty,
 				unsigned int set, unsigned int clear)
 {
 	struct tty0tty_serial *tty0tty = tty->driver_data;
@@ -440,7 +440,7 @@ static int tty0tty_tiocmset(struct tty_struct *tty, struct file *file,
 }
 
 
-static int tty0tty_ioctl_tiocgserial(struct tty_struct *tty, struct file *file,
+static int tty0tty_ioctl_tiocgserial(struct tty_struct *tty,
 					unsigned int cmd, unsigned long arg)
 {
 	struct tty0tty_serial *tty0tty = tty->driver_data;
@@ -476,7 +476,7 @@ static int tty0tty_ioctl_tiocgserial(struct tty_struct *tty, struct file *file,
 	return -ENOIOCTLCMD;
 }
 
-static int tty0tty_ioctl_tiocmiwait(struct tty_struct *tty, struct file *file,
+static int tty0tty_ioctl_tiocmiwait(struct tty_struct *tty,
 					unsigned int cmd, unsigned long arg)
 {
 	struct tty0tty_serial *tty0tty = tty->driver_data;
@@ -517,7 +517,7 @@ static int tty0tty_ioctl_tiocmiwait(struct tty_struct *tty, struct file *file,
 	return -ENOIOCTLCMD;
 }
 
-static int tty0tty_ioctl_tiocgicount(struct tty_struct *tty, struct file *file,
+static int tty0tty_ioctl_tiocgicount(struct tty_struct *tty,
 					unsigned int cmd, unsigned long arg)
 {
 	struct tty0tty_serial *tty0tty = tty->driver_data;
@@ -548,7 +548,7 @@ static int tty0tty_ioctl_tiocgicount(struct tty_struct *tty, struct file *file,
 	return -ENOIOCTLCMD;
 }
 
-static int tty0tty_ioctl(struct tty_struct *tty, struct file *file,
+static int tty0tty_ioctl(struct tty_struct *tty,
 				unsigned int cmd, unsigned long arg)
 {
 #ifdef SCULL_DEBUG
@@ -556,11 +556,11 @@ static int tty0tty_ioctl(struct tty_struct *tty, struct file *file,
 #endif
 	switch (cmd) {
 	case TIOCGSERIAL:
-		return tty0tty_ioctl_tiocgserial(tty, file, cmd, arg);
+		return tty0tty_ioctl_tiocgserial(tty, cmd, arg);
 	case TIOCMIWAIT:
-		return tty0tty_ioctl_tiocmiwait(tty, file, cmd, arg);
+		return tty0tty_ioctl_tiocmiwait(tty, cmd, arg);
 	case TIOCGICOUNT:
-		return tty0tty_ioctl_tiocgicount(tty, file, cmd, arg);
+		return tty0tty_ioctl_tiocgicount(tty, cmd, arg);
 	}
 
 	return -ENOIOCTLCMD;
