@@ -23,7 +23,7 @@ pts:
 
 module:
 
- The module is tested in kernel 2.6.26-2 (debian) and kernel 2.6.30
+ The module is tested in kernel 3.2.0
 
   When loaded, create 8 ttys interconnected:
   /dev/tnt0  <=>  /dev/tnt1 
