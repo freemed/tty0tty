@@ -1,0 +1,3 @@
+
+implement wake_up_interruptible(&tp->wait) on every change of MSR register to TIOCMIWAIT work 
+

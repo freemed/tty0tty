@@ -1,5 +1,6 @@
-tty0tty - linux null modem emulator 
-Forked to instance on github since original project is dead.
+
+
+tty0tty - linux null modem emulator v1.2 
 
 
 This is the tty0tty directory tree:
@@ -8,7 +9,7 @@ This is the tty0tty directory tree:
   pts		 - null-modem using ptys (without handshake lines)
 
 
-pts: 
+pts (unix98): 
 
   When run connect two pseudo-ttys and show the connection names:
 
@@ -23,7 +24,7 @@ pts:
 
 module:
 
- The module is tested in kernel 3.2.0
+ The module is tested in kernel 3.10.2 (debian) 
 
   When loaded, create 8 ttys interconnected:
   /dev/tnt0  <=>  /dev/tnt1 
@@ -46,6 +47,6 @@ module:
 Requirements:
 
   for module build is necessary kernel-headers or kernel source
-  ( in debian use apt-get install linux-image-2.6.26-2-amd64 for example)
 
 
+For e-mail suggestions :  lcgamboa@yahoo.com

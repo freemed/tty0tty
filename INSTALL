@@ -10,10 +10,9 @@ module:
    insmod tty0tty.ko  -To load module (using root or sudo)	
 
 
-this version is not installable
+this version is not auto installable
 
 
 Requirements:
 
   for module build is necessary kernel-headers or kernel source
-  ( in debian use apt-get install linux-image-2.6.26-2-amd64 for example)
