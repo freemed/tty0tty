@@ -51,9 +51,12 @@ MODULE_AUTHOR( DRIVER_AUTHOR );
 MODULE_DESCRIPTION( DRIVER_DESC );
 MODULE_LICENSE("GPL");
 
+short pairs = 4; //Default number of pairs of devices
+module_param(pairs, short, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+MODULE_PARM_DESC(pairs, "Number of pairs of devices to be created, maximum of 128");
+
 
 #define TTY0TTY_MAJOR		240	/* experimental range */
-#define TTY0TTY_MINORS		8	/* device number, always even*/
 
 /* fake UART values */
 //out
@@ -67,7 +70,7 @@ MODULE_LICENSE("GPL");
 #define MSR_RI		0x80
          
 
-static struct tty_port tport[TTY0TTY_MINORS];
+static struct tty_port *tport;
 
 struct tty0tty_serial {
 	struct tty_struct	*tty;		/* pointer to the tty for this device */
@@ -85,7 +88,7 @@ struct tty0tty_serial {
        
 };
 
-static struct tty0tty_serial *tty0tty_table[TTY0TTY_MINORS];	/* initially all NULL */
+static struct tty0tty_serial **tty0tty_table;	/* initially all NULL */
 
 
 static int tty0tty_open(struct tty_struct *tty, struct file *file)
@@ -623,12 +626,20 @@ static int __init tty0tty_init(void)
 {
 	int retval;
         int i;
+	if (pairs > 128) pairs = 128;
+	if (pairs < 1) pairs = 1;
+	tport = kmalloc(2*pairs*sizeof(struct tty_port),GFP_KERNEL);
+	tty0tty_table = kmalloc(2*pairs*sizeof(struct tty0tty_serial*),GFP_KERNEL);
  
+        for(i=0;i<2*pairs;i++)
+        {
+		tty0tty_table[i] = NULL;
+	}
 #ifdef SCULL_DEBUG
 	printk(KERN_DEBUG "%s - \n", __FUNCTION__);
 #endif
 	/* allocate the tty driver */
-	tty0tty_tty_driver = alloc_tty_driver(TTY0TTY_MINORS);
+	tty0tty_tty_driver = alloc_tty_driver(2*pairs);
 	if (!tty0tty_tty_driver)
 		return -ENOMEM;
 
@@ -653,7 +664,7 @@ static int __init tty0tty_init(void)
 
 	tty_set_operations(tty0tty_tty_driver, &serial_ops);
         
-        for(i=0;i<TTY0TTY_MINORS;i++)
+        for(i=0;i<2*pairs;i++)
         {
           tty_port_init(&tport[i]);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0)
@@ -680,7 +691,7 @@ static void __exit tty0tty_exit(void)
 #ifdef SCULL_DEBUG
         printk(KERN_DEBUG "%s - \n", __FUNCTION__);
 #endif
-	for (i = 0; i < TTY0TTY_MINORS; ++i)
+	for (i = 0; i < 2*pairs; ++i)
          {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0)
                 tty_port_destroy(&tport[i]);  
@@ -690,7 +701,7 @@ static void __exit tty0tty_exit(void)
 	tty_unregister_driver(tty0tty_tty_driver);
 
 	/* shut down all of the timers and free the memory */
-	for (i = 0; i < TTY0TTY_MINORS; ++i) {
+	for (i = 0; i < 2*pairs; ++i) {
 		tty0tty = tty0tty_table[i];
 		if (tty0tty) {
 			/* close the port */
@@ -702,6 +713,8 @@ static void __exit tty0tty_exit(void)
 			tty0tty_table[i] = NULL;
 		}
 	}
+	kfree(tport);
+	kfree(tty0tty_table);
 }
 
 module_init(tty0tty_init);
