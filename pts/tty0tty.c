@@ -141,7 +141,7 @@ copydata(int fdfrom, int fdto)
     if (bw <= 0)
     {
       // kernel buffer may be full, but we can recover
-      fprintf(stderr, "Write error, br=%d bw=%d\n", br, bw);
+      fprintf(stderr, "Write error, br=%d bw=%d\n", (int) br, (int) bw);
       usleep(500000);
       // discard input
       while (read(fdfrom, buffer, 1024) > 0)
