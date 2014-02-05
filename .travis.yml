@@ -1,3 +1,5 @@
 language: c
+before_script:
+  - sudo apt-get install linux-headers-`uname -r`
 script:
   - make
