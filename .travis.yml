@@ -1,0 +1,4 @@
+language: c
+build_script:
+  - ( cd pts ; make )
+  - ( cd kernel ; make )
