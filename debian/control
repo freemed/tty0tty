@@ -1,0 +1,16 @@
+Source: tty0tty
+Section: kernel
+Priority: optional
+Maintainer: Eric Keller <eric.keller.ek1@roche.com>
+Build-Depends: debhelper (>=9), dkms
+Standards-Version: 3.9.7
+Homepage: https://github.com/freemed/tty0tty
+#Vcs-Git: git://anonscm.debian.org/collab-maint/tty0tty.git
+#Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/tty0tty.git
+
+Package: tty0tty-dkms
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Linux null modem emulator kernel module
+ Linux kernel module null-modem, null-modem using ptys without handshake lines
+
