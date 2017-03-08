@@ -1,0 +1,15 @@
+#!/usr/bin/make -f
+
+VERSION=$(shell dpkg-parsechangelog |grep ^Version:|cut -d ' ' -f 2)
+
+%:
+	dh $@ --with dkms
+
+override_dh_install:
+	dh_install module/Makefile module/tty0tty.c usr/src/tty0tty-$(VERSION)/
+
+override_dh_dkms:
+	dh_dkms -V $(VERSION)
+
+# do nothing
+override_dh_auto_configure override_dh_auto_build override_dh_auto_test override_dh_auto_install override_dh_auto_clean:

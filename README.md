@@ -107,6 +107,14 @@ tty0tty
 
 Note that this method will not make the module persist over kernel updates so if you ever update your kernel, make sure you build tty0tty again repeat the process.
 
+## Debian package
+
+In order to build the dkms Debian package
+
+```
+sudo apt-get update && sudo apt-get install -y dh-make dkms build-essential
+debuild -uc -us
+```
 
 ## Contact
 
