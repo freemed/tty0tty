@@ -55,9 +55,6 @@ short pairs = 4; //Default number of pairs of devices
 module_param(pairs, short, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 MODULE_PARM_DESC(pairs, "Number of pairs of devices to be created, maximum of 128");
 
-
-#define TTY0TTY_MAJOR		240	/* experimental range */
-
 /* fake UART values */
 //out
 #define MCR_DTR		0x01
@@ -648,7 +645,8 @@ static int __init tty0tty_init(void)
 	tty0tty_tty_driver->driver_name = "tty0tty";
 	tty0tty_tty_driver->name = "tnt";
         /* no more devfs subsystem */
-	tty0tty_tty_driver->major = TTY0TTY_MAJOR;
+        /* get dynamic major number */
+	tty0tty_tty_driver->major = 0;
 	tty0tty_tty_driver->type = TTY_DRIVER_TYPE_SERIAL;
 	tty0tty_tty_driver->subtype = SERIAL_TYPE_NORMAL;
         tty0tty_tty_driver->flags = TTY_DRIVER_RESET_TERMIOS | TTY_DRIVER_REAL_RAW ;
