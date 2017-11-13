@@ -58,9 +58,13 @@ short pairs = 4; //Default number of pairs of devices
 module_param(pairs, short, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 MODULE_PARM_DESC(pairs, "Number of pairs of devices to be created, maximum of 128");
 
-
+#if 0
 #define TTY0TTY_MAJOR		240	/* experimental range */
 #define TTY0TTY_MINOR		16
+#else
+#define TTY0TTY_MAJOR		0	/* dynamic allocation */
+#define TTY0TTY_MINOR		0
+#endif
 
 /* fake UART values */
 //out
