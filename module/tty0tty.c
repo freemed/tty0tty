@@ -60,6 +60,7 @@ MODULE_PARM_DESC(pairs, "Number of pairs of devices to be created, maximum of 12
 
 
 #define TTY0TTY_MAJOR		240	/* experimental range */
+#define TTY0TTY_MINOR		16
 
 /* fake UART values */
 //out
@@ -652,6 +653,7 @@ static int __init tty0tty_init(void)
 	tty0tty_tty_driver->name = "tnt";
         /* no more devfs subsystem */
 	tty0tty_tty_driver->major = TTY0TTY_MAJOR;
+	tty0tty_tty_driver->minor_start = TTY0TTY_MINOR;
 	tty0tty_tty_driver->type = TTY_DRIVER_TYPE_SERIAL;
 	tty0tty_tty_driver->subtype = SERIAL_TYPE_NORMAL;
         tty0tty_tty_driver->flags = TTY_DRIVER_RESET_TERMIOS | TTY_DRIVER_REAL_RAW ;
@@ -663,7 +665,6 @@ static int __init tty0tty_init(void)
         tty0tty_tty_driver->init_termios.c_lflag = 0;
         tty0tty_tty_driver->init_termios.c_ispeed = 38400;
         tty0tty_tty_driver->init_termios.c_ospeed = 38400;
-
 
 	tty_set_operations(tty0tty_tty_driver, &serial_ops);
         
