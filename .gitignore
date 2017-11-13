@@ -11,6 +11,7 @@
 /module/Module.symvers
 /module/modules.order
 /module/.tmp_versions
+pts/tty0tty
 
 # Ignore backup files
 *~
