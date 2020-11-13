@@ -214,7 +214,7 @@ static int tty0tty_write(struct tty_struct *tty, const unsigned char *buffer,
 			 int count)
 {
 	struct tty0tty_serial *tty0tty = tty->driver_data;
-	int retval = -EINVAL;
+	int retval = 0;
 	struct tty_struct *ttyx = NULL;
 
 	if (!tty0tty)
@@ -261,7 +261,7 @@ exit:
 static int tty0tty_write_room(struct tty_struct *tty)
 {
 	struct tty0tty_serial *tty0tty = tty->driver_data;
-	int room = -EINVAL;
+	int room = 0;
 
 	if (!tty0tty)
 		return -ENODEV;
