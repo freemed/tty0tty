@@ -214,7 +214,7 @@ static int tty0tty_write(struct tty_struct *tty, const unsigned char *buffer,
 			 int count)
 {
 	struct tty0tty_serial *tty0tty = tty->driver_data;
-	int retval = -EINVAL;
+	int retval = -ENOTCONN;
 	struct tty_struct *ttyx = NULL;
 
 	if (!tty0tty)
