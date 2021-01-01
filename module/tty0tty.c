@@ -261,7 +261,7 @@ exit:
 static int tty0tty_write_room(struct tty_struct *tty)
 {
 	struct tty0tty_serial *tty0tty = tty->driver_data;
-	int room = -EINVAL;
+	int room = -ENOBUFS;
 
 	if (!tty0tty)
 		return -ENODEV;
