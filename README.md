@@ -116,6 +116,16 @@ sudo apt-get update && sudo apt-get install -y dh-make dkms build-essential
 debuild -uc -us
 ```
 
+## Yocto package
+
+In order to integrate tty0tty into Yocto, please copy contents of 'yocto' folder add to your local.conf
+
+```
+IMAGE_INSTALL_append = " \
+ tty0tty-module \
+"
+```
+
 ## Contact
 
 For e-mail suggestions :  lcgamboa@yahoo.com
