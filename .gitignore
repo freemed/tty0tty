@@ -8,6 +8,8 @@
 *.mod.c
 *.o.cmd
 *.ko.cmd
+*.mod.cmd
+*.mod
 /module/Module.symvers
 /module/modules.order
 /module/.tmp_versions
@@ -23,3 +25,16 @@ pts/tty0tty
 .settings
 .pydevproject
 
+# debian packaging artifacts
+debian/*
+debhelper/*
+files
+*-dkms.debhelper.log
+*-dkms.dkms.debhelper
+*-dkms.postinst.debhelper
+*-dkms.prerm.debhelper
+*-dkms.substvars
+*-dkms/*
+
+# vim temporary file
+*.swp
