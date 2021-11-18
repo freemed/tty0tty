@@ -27,6 +27,7 @@ default:
 
 modules_install:
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules_install
+	install -m 644 50-tty0tty.rules /etc/udev/rules.d
 
 endif
 
