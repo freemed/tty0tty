@@ -258,7 +258,11 @@ exit:
 	return retval;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 14, 0)
 static unsigned int tty0tty_write_room(struct tty_struct *tty)
+#else
+static int tty0tty_write_room(struct tty_struct *tty)
+#endif
 {
 	struct tty0tty_serial *tty0tty = tty->driver_data;
 	int room = -ENOBUFS;
