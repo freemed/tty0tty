@@ -1,0 +1,5 @@
+ACTION!="add", GOTO="default_end"
+
+KERNEL=="tnt[0-9]", GROUP="dialout"
+
+LABEL="default_end"
