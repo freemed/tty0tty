@@ -57,12 +57,6 @@ Clone the repo https://github.com/freemed/tty0tty
 git clone https://github.com/freemed/tty0tty
 ```
 
-Extract it
-
-```
-tar xf tty0tty-1.2.tgz
-```
-
 Build the kernel module from provided source
 
 ```
@@ -70,26 +64,37 @@ cd tty0tty-1.2/module
 make
 ```
 
-Copy the new kernel module into the kernel modules directory
+Install the new kernel module into the kernel modules directory
 
 ```
-sudo cp tty0tty.ko /lib/modules/$(uname -r)/kernel/drivers/misc/
+sudo make modules_install
+```
+
+NOTE: if module signing is enabled, in order for depmop to complete, you may
+need to create file certs/x509.genkey in the kernel modules include directory
+and generate file signing_key.pem using openssl, guides are available online.
+
+Appropriate permissions are provided thanks to a udev rule located under:
+
+```
+/etc/udev/rules.d/50-tty0tty.rules
+```
+
+NOTE: you need to add yourself to the dialout group (and do a full relog), with:
+
+```
+sudo usermod -a -G dialout ${USER}
 ```
 
 Load the module
 
 ```
+sudo udevadm control --reload-rules
 sudo depmod
 sudo modprobe tty0tty
 ```
 
 You should see new serial ports in ```/dev/``` (```ls /dev/tnt*```)
-Give appropriate permissions to the new serial ports
-
-```
-sudo chmod 666 /dev/tnt*
-```
-
 You can now access the serial ports as /dev/tnt0 (1,2,3,4 etc) Note that the consecutive ports are interconnected. For example, /dev/tnt0 and /dev/tnt1 are connected as if using a direct cable.
 
 Persisting across boot:

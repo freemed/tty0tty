@@ -258,7 +258,11 @@ exit:
 	return retval;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 14, 0)
+static unsigned int tty0tty_write_room(struct tty_struct *tty)
+#else
 static int tty0tty_write_room(struct tty_struct *tty)
+#endif
 {
 	struct tty0tty_serial *tty0tty = tty->driver_data;
 	int room = 0;
@@ -628,7 +632,7 @@ static int __init tty0tty_init(void)
 	printk(KERN_DEBUG "%s - \n", __FUNCTION__);
 #endif
 	/* allocate the tty driver */
-	tty0tty_tty_driver = alloc_tty_driver(2 * pairs);
+	tty0tty_tty_driver = tty_alloc_driver(2 * pairs, 0);
 	if (!tty0tty_tty_driver)
 		return -ENOMEM;
 
@@ -664,7 +668,7 @@ static int __init tty0tty_init(void)
 	retval = tty_register_driver(tty0tty_tty_driver);
 	if (retval) {
 		printk(KERN_ERR "failed to register tty0tty tty driver");
-		put_tty_driver(tty0tty_tty_driver);
+		tty_driver_kref_put(tty0tty_tty_driver);
 		return retval;
 	}
 
