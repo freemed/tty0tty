@@ -288,7 +288,7 @@ exit:
 #define RELEVANT_IFLAG(iflag) ((iflag) & (IGNBRK|BRKINT|IGNPAR|PARMRK|INPCK))
 
 static void tty0tty_set_termios(struct tty_struct *tty,
-				struct ktermios *old_termios)
+				const struct ktermios *old_termios)
 {
 	unsigned int cflag;
 	unsigned int iflag;
