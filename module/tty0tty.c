@@ -287,8 +287,13 @@ exit:
 
 #define RELEVANT_IFLAG(iflag) ((iflag) & (IGNBRK|BRKINT|IGNPAR|PARMRK|INPCK))
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,1,0)
+static void tty0tty_set_termios(struct tty_struct *tty,
+				const struct ktermios *old_termios)
+#else
 static void tty0tty_set_termios(struct tty_struct *tty,
 				struct ktermios *old_termios)
+#endif
 {
 	unsigned int cflag;
 	unsigned int iflag;
