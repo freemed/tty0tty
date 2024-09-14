@@ -37,6 +37,7 @@
 #include <linux/serial.h>
 #include <linux/sched.h>
 #include <linux/version.h>
+#include <linux/delay.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 #include <linux/sched/signal.h>
 #endif
@@ -91,6 +92,7 @@ struct tty0tty_serial {
 	wait_queue_head_t wait;
 	struct async_icount icount;
 
+	u64 nsecs_per_byte;
 };
 
 static struct tty0tty_serial **tty0tty_table;	/* initially all NULL */
@@ -216,6 +218,8 @@ static int tty0tty_write(struct tty_struct *tty, const unsigned char *buffer,
 	struct tty0tty_serial *tty0tty = tty->driver_data;
 	int retval = 0;
 	struct tty_struct *ttyx = NULL;
+	u64 elapsed, delay;
+	ktime_t start_time = ktime_get_ns();
 
 	if (!tty0tty)
 		return -ENODEV;
@@ -251,6 +255,12 @@ static int tty0tty_write(struct tty_struct *tty, const unsigned char *buffer,
 		tty_flip_buffer_push(ttyx);
 #endif
 		retval = count;
+	}
+
+	elapsed = ktime_get_ns() - start_time;
+	delay = ((count * tty0tty->nsecs_per_byte) - elapsed) / 1000;
+	if (delay > 1) {
+		usleep_range(delay-1, delay);
 	}
 
 exit:
@@ -292,6 +302,8 @@ static void tty0tty_set_termios(struct tty_struct *tty,
 {
 	unsigned int cflag;
 	unsigned int iflag;
+	unsigned int bits_per_byte, baud_rate;
+	struct tty0tty_serial *tty0tty = tty->driver_data;
 
 #ifdef SCULL_DEBUG
 	printk(KERN_DEBUG "%s - \n", __FUNCTION__);
@@ -316,39 +328,64 @@ static void tty0tty_set_termios(struct tty_struct *tty,
 			return;
 		}
 	}
-#ifdef SCULL_DEBUG
 	/* get the byte size */
 	switch (cflag & CSIZE) {
 	case CS5:
-		printk(KERN_DEBUG " - data bits = 5\n");
+		bits_per_byte = 5;
 		break;
 	case CS6:
-		printk(KERN_DEBUG " - data bits = 6\n");
+		bits_per_byte = 6;
 		break;
 	case CS7:
-		printk(KERN_DEBUG " - data bits = 7\n");
+		bits_per_byte = 7;
 		break;
 	default:
 	case CS8:
-		printk(KERN_DEBUG " - data bits = 8\n");
+		bits_per_byte = 8;
 		break;
 	}
+#ifdef SCULL_DEBUG
+	printk(KERN_DEBUG " - data bits = %d\n", bits_per_byte);
+#endif
+
+	/* Add start bit */
+	bits_per_byte++;
 
 	/* determine the parity */
-	if (cflag & PARENB)
-		if (cflag & PARODD)
+	if (cflag & PARENB) {
+#ifdef SCULL_DEBUG
+		if (cflag & PARODD) {
 			printk(KERN_DEBUG " - parity = odd\n");
-		else
+		} else {
 			printk(KERN_DEBUG " - parity = even\n");
-	else
+		}
+#endif
+		/* Add parity bit */
+		bits_per_byte++;
+#ifdef SCULL_DEBUG
+	} else {
 		printk(KERN_DEBUG " - parity = none\n");
+#endif
+	}
 
 	/* figure out the stop bits requested */
-	if (cflag & CSTOPB)
+	if (cflag & CSTOPB) {
+#ifdef SCULL_DEBUG
 		printk(KERN_DEBUG " - stop bits = 2\n");
-	else
+#endif
+		bits_per_byte += 2;
+	} else {
+#ifdef SCULL_DEBUG
 		printk(KERN_DEBUG " - stop bits = 1\n");
+#endif
+		bits_per_byte += 1;
+	}
 
+	baud_rate = tty_get_baud_rate(tty);
+	/* Compute microsecs per byte */
+	tty0tty->nsecs_per_byte = 1000000000ULL / (baud_rate / bits_per_byte);
+
+#ifdef SCULL_DEBUG
 	/* figure out the hardware flow control settings */
 	if (cflag & CRTSCTS)
 		printk(KERN_DEBUG " - RTS/CTS is enabled\n");
@@ -378,10 +415,10 @@ static void tty0tty_set_termios(struct tty_struct *tty,
 		else
 			printk(KERN_DEBUG " - OUTBOUND XON/XOFF is disabled\n");
 	}
+	printk(KERN_DEBUG " - baud rate = %d, %lluns/byte\n", baud_rate, tty0tty->nsecs_per_byte);
+#endif
 
 	/* get the baud rate wanted */
-	printk(KERN_DEBUG " - baud rate = %d\n", tty_get_baud_rate(tty));
-#endif
 }
 
 //static int tty0tty_tiocmget(struct tty_struct *tty, struct file *file)
