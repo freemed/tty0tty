@@ -1,0 +1,13 @@
+Index: tty0tty-1.2/module/Makefile
+===================================================================
+--- tty0tty-1.2.orig/module/Makefile	2013-08-15 17:45:21.000000000 -0700
++++ tty0tty-1.2/module/Makefile	2013-11-16 21:12:19.947915561 -0800
+@@ -19,7 +19,7 @@
+ 
+ else
+ 
+-KERNELDIR ?= /lib/modules/$(shell uname -r)/build
++KERNELDIR ?= $(KERNEL_SRC)
+ PWD       := $(shell pwd)
+ 
+ default:
