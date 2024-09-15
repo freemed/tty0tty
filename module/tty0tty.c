@@ -305,6 +305,7 @@ static void tty0tty_set_termios(struct tty_struct *tty,
 {
 	unsigned int cflag;
 	unsigned int iflag;
+	unsigned int bits_per_byte;
 
 	DEBUG_PRINTK(KERN_DEBUG "%s - \n", __FUNCTION__);
 
@@ -329,34 +330,46 @@ static void tty0tty_set_termios(struct tty_struct *tty,
 	/* get the byte size */
 	switch (cflag & CSIZE) {
 	case CS5:
-		DEBUG_PRINTK(KERN_DEBUG " - data bits = 5\n");
+		bits_per_byte = 5;
 		break;
 	case CS6:
-		DEBUG_PRINTK(KERN_DEBUG " - data bits = 6\n");
+		bits_per_byte = 6;
 		break;
 	case CS7:
-		DEBUG_PRINTK(KERN_DEBUG " - data bits = 7\n");
+		bits_per_byte = 7;
 		break;
 	default:
 	case CS8:
-		DEBUG_PRINTK(KERN_DEBUG " - data bits = 8\n");
+		bits_per_byte = 8;
 		break;
 	}
 
+	DEBUG_PRINTK(KERN_DEBUG " - data bits = %d\n", bits_per_byte);
+
+	/* Add start bit */
+	bits_per_byte++;
+
 	/* determine the parity */
-	if (cflag & PARENB)
+	if (cflag & PARENB) {
 		if (cflag & PARODD)
 			DEBUG_PRINTK(KERN_DEBUG " - parity = odd\n");
 		else
 			DEBUG_PRINTK(KERN_DEBUG " - parity = even\n");
-	else
+		/* Add parity bit */
+		bits_per_byte++;
+	} else
 		DEBUG_PRINTK(KERN_DEBUG " - parity = none\n");
 
 	/* figure out the stop bits requested */
-	if (cflag & CSTOPB)
+	if (cflag & CSTOPB) {
 		DEBUG_PRINTK(KERN_DEBUG " - stop bits = 2\n");
-	else
+		bits_per_byte+=2;
+	} else {
 		DEBUG_PRINTK(KERN_DEBUG " - stop bits = 1\n");
+		bits_per_byte+=1;
+	}
+
+	DEBUG_PRINTK(KERN_DEBUG " - bits per byte = %d\n", bits_per_byte);
 
 	/* figure out the hardware flow control settings */
 	if (cflag & CRTSCTS)
