@@ -306,6 +306,8 @@ static void tty0tty_set_termios(struct tty_struct *tty,
 	unsigned int cflag;
 	unsigned int iflag;
 	unsigned int bits_per_byte;
+	unsigned int baud_rate;
+	u64 nanosecs_per_byte;
 
 	DEBUG_PRINTK(KERN_DEBUG "%s - \n", __FUNCTION__);
 
@@ -404,7 +406,12 @@ static void tty0tty_set_termios(struct tty_struct *tty,
 	}
 
 	/* get the baud rate wanted */
-	DEBUG_PRINTK(KERN_DEBUG " - baud rate = %d\n", tty_get_baud_rate(tty));
+	baud_rate = tty_get_baud_rate(tty);
+	DEBUG_PRINTK(KERN_DEBUG " - baud rate = %d\n", baud_rate);
+
+	/* get the time a real serial port would require to push a byte */
+	nanosecs_per_byte = 1000000000ULL / (baud_rate / bits_per_byte);
+	DEBUG_PRINTK(KERN_DEBUG " - time per byte = %lluns\n", nanosecs_per_byte);
 }
 
 //static int tty0tty_tiocmget(struct tty_struct *tty, struct file *file)
