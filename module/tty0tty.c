@@ -36,6 +36,7 @@
 #include <linux/tty_flip.h>
 #include <linux/serial.h>
 #include <linux/sched.h>
+#include <linux/delay.h>
 #include <linux/version.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 #include <linux/sched/signal.h>
@@ -97,6 +98,8 @@ struct tty0tty_serial {
 	wait_queue_head_t wait;
 	struct async_icount icount;
 
+	/* for timing control */
+	u64 nanosecs_per_byte;
 };
 
 static struct tty0tty_serial **tty0tty_table;	/* initially all NULL */
@@ -224,6 +227,8 @@ static int tty0tty_write(struct tty_struct *tty, const unsigned char *buffer,
 	struct tty0tty_serial *tty0tty = tty->driver_data;
 	int retval = 0;
 	struct tty_struct *ttyx = NULL;
+	u64 elapsed, delay;
+	ktime_t start_time = ktime_get_ns();
 
 	if (!tty0tty)
 		return -ENODEV;
@@ -260,6 +265,17 @@ static int tty0tty_write(struct tty_struct *tty, const unsigned char *buffer,
 #endif
 		retval = count;
 	}
+
+	/* Compute time spent pushing this buffer */
+	elapsed = ktime_get_ns() - start_time;
+
+	/* Compute how much to wait to make sure this buffer is, from
+	 * userland's point of view, pushed as slow as it would be on
+	 * a real serial port */
+	delay = ((count * tty0tty->nanosecs_per_byte) - elapsed) / 1000;
+
+	if (delay > 1)
+		usleep_range(delay-1, delay);
 
 exit:
 	up(&tty0tty->sem);
@@ -307,9 +323,12 @@ static void tty0tty_set_termios(struct tty_struct *tty,
 	unsigned int iflag;
 	unsigned int bits_per_byte;
 	unsigned int baud_rate;
-	u64 nanosecs_per_byte;
+	struct tty0tty_serial *tty0tty = tty->driver_data;
 
 	DEBUG_PRINTK(KERN_DEBUG "%s - \n", __FUNCTION__);
+
+	if (!tty0tty)
+		return;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0)
 	cflag = tty->termios.c_cflag;
@@ -410,8 +429,8 @@ static void tty0tty_set_termios(struct tty_struct *tty,
 	DEBUG_PRINTK(KERN_DEBUG " - baud rate = %d\n", baud_rate);
 
 	/* get the time a real serial port would require to push a byte */
-	nanosecs_per_byte = 1000000000ULL / (baud_rate / bits_per_byte);
-	DEBUG_PRINTK(KERN_DEBUG " - time per byte = %lluns\n", nanosecs_per_byte);
+	tty0tty->nanosecs_per_byte = 1000000000ULL / (baud_rate / bits_per_byte);
+	DEBUG_PRINTK(KERN_DEBUG " - time per byte = %lluns\n", tty0tty->nanosecs_per_byte);
 }
 
 //static int tty0tty_tiocmget(struct tty_struct *tty, struct file *file)
