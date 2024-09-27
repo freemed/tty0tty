@@ -228,7 +228,11 @@ static int tty0tty_write(struct tty_struct *tty, const unsigned char *buffer,
 	int retval = 0;
 	struct tty_struct *ttyx = NULL;
 	u64 elapsed, delay;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
 	ktime_t start_time = ktime_get_ns();
+#else
+	u64 start_time = ktime_get_ns();
+#endif
 
 	if (!tty0tty)
 		return -ENODEV;
