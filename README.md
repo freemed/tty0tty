@@ -60,7 +60,7 @@ git clone https://github.com/freemed/tty0tty
 Build the kernel module from provided source
 
 ```
-cd tty0tty-1.2/module
+cd tty0tty/module
 make
 ```
 
