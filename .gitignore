@@ -26,7 +26,8 @@ pts/tty0tty
 .pydevproject
 
 # debian packaging artifacts
-debian/*
+debian/.debhelper/
+debian/tty0tty-dkms/
 debhelper/*
 files
 *-dkms.debhelper.log
