@@ -647,6 +647,30 @@ static int tty0tty_ioctl(struct tty_struct *tty,
 	return -ENOIOCTLCMD;
 }
 
+static int tty0tty_get_serial(struct tty_struct *tty, struct serial_struct *p)
+{
+    	DEBUG_PRINTK(KERN_DEBUG "%s - \n", __FUNCTION__);
+	struct tty0tty_serial *tty0tty = tty->driver_data;
+
+	if (!tty0tty)
+		return -ENODEV;
+
+	p->type = tty0tty->serial.type;
+	p->line = tty0tty->serial.line;
+	p->port = tty0tty->serial.port;
+	p->irq = tty0tty->serial.irq;
+	p->flags = ASYNC_SKIP_TEST | ASYNC_AUTO_IRQ;
+	p->xmit_fifo_size = tty0tty->serial.xmit_fifo_size;
+	p->baud_base = tty0tty->serial.baud_base;
+	p->close_delay = 5 * HZ;
+	p->closing_wait = 30 * HZ;
+	p->custom_divisor = tty0tty->serial.custom_divisor;
+	p->hub6 = tty0tty->serial.hub6;
+	p->io_type = tty0tty->serial.io_type;
+
+	return 0;
+}
+
 static struct tty_operations serial_ops = {
 	.open = tty0tty_open,
 	.close = tty0tty_close,
@@ -656,6 +680,7 @@ static struct tty_operations serial_ops = {
 	.tiocmget = tty0tty_tiocmget,
 	.tiocmset = tty0tty_tiocmset,
 	.ioctl = tty0tty_ioctl,
+	.get_serial = tty0tty_get_serial,
 };
 
 static struct tty_driver *tty0tty_tty_driver;
