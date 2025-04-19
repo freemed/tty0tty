@@ -130,7 +130,3 @@ IMAGE_INSTALL_append = " \
  tty0tty-module \
 "
 ```
-
-## Contact
-
-For e-mail suggestions :  lcgamboa@yahoo.com
