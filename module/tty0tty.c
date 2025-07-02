@@ -378,12 +378,14 @@ static void tty0tty_set_termios(struct tty_struct *tty,
 	if (cflag & PARENB) {
 		if (cflag & PARODD)
 			DEBUG_PRINTK(KERN_DEBUG " - parity = odd\n");
-		else
+		else {
 			DEBUG_PRINTK(KERN_DEBUG " - parity = even\n");
+		}
 		/* Add parity bit */
 		bits_per_byte++;
-	} else
+	} else {
 		DEBUG_PRINTK(KERN_DEBUG " - parity = none\n");
+	}
 
 	/* figure out the stop bits requested */
 	if (cflag & CSTOPB) {
@@ -397,10 +399,11 @@ static void tty0tty_set_termios(struct tty_struct *tty,
 	DEBUG_PRINTK(KERN_DEBUG " - bits per byte = %d\n", bits_per_byte);
 
 	/* figure out the hardware flow control settings */
-	if (cflag & CRTSCTS)
+	if (cflag & CRTSCTS) {
 		DEBUG_PRINTK(KERN_DEBUG " - RTS/CTS is enabled\n");
-	else
+	} else {
 		DEBUG_PRINTK(KERN_DEBUG " - RTS/CTS is disabled\n");
+	}
 
 	/* determine software flow control */
 	/* if we are implementing XON/XOFF, set the start and 
@@ -416,16 +419,18 @@ static void tty0tty_set_termios(struct tty_struct *tty,
 			DEBUG_PRINTK(KERN_DEBUG " - INBOUND XON/XOFF is enabled, "
 			       "XON = %2x, XOFF = %2x\n", start_char,
 			       stop_char);
-		else
+		else {
 			DEBUG_PRINTK(KERN_DEBUG " - INBOUND XON/XOFF is disabled\n");
+		}
 
 		/* if we are implementing OUTBOUND XON/XOFF */
-		if (I_IXON(tty))
+		if (I_IXON(tty)) {
 			DEBUG_PRINTK(KERN_DEBUG " - OUTBOUND XON/XOFF is enabled, "
 			       "XON = %2x, XOFF = %2x\n", start_char,
 			       stop_char);
-		else
+		} else {
 			DEBUG_PRINTK(KERN_DEBUG " - OUTBOUND XON/XOFF is disabled\n");
+		}
 	}
 
 	/* get the baud rate wanted */
